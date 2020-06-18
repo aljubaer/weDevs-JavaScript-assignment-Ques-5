@@ -38,11 +38,11 @@
       </div>
 
       <div>
-        <button v-bind:class="{ active: filter == 'all' }" @click="filter = 'all'">All</button>
-        <button v-bind:class="{ active: filter == 'active' }" @click="filter = 'active'">Active</button>
+        <button v-bind:class="{ active: filter == 'all' }" @click="updateFilter('all')">All</button>
+        <button v-bind:class="{ active: filter == 'active' }" @click="updateFilter('active')">Active</button>
         <button
           v-bind:class="{ active: filter == 'completed' }"
-          @click="filter = 'completed'"
+          @click="updateFilter('completed')"
         >Completed</button>
       </div>
 
@@ -60,9 +60,7 @@ export default {
     return {
       newTodo: "",
       nextId: 1,
-      todos: [],
-      beforeEdit: "",
-      filter: "all"
+      beforeEdit: ""
     };
   },
   directives: {
@@ -74,35 +72,34 @@ export default {
   },
   computed: {
     remainingTodos() {
-      return this.todos.filter(todo => !todo.completed).length;
+      return this.$store.getters.remainingTodos;
     },
     anyRemaining() {
-      return this.remainingTodos != 0;
+      return this.$store.getters.anyRemaining;
     },
     filteredTodos() {
-      if (this.filter == "all") return this.todos;
-      else if (this.filter == "completed")
-        return this.todos.filter(todo => todo.completed == true);
-      else return this.todos.filter(todo => todo.completed == false);
+      return this.$store.getters.filteredTodos;
     },
     showClearCompletedButton() {
-      return this.todos.filter(todo => todo.completed == true).length > 0;
+      return this.$store.getters.showClearCompletedButton;
+    },
+    filter() {
+      return this.$store.state.filter;
     }
   },
   methods: {
     addTodo() {
-      console.log("called");
       if (this.newTodo.trim().length == 0) return;
 
-      this.todos.push({
-        id: this.nextId,
+      this.$store.state.todos.push({
+        id: this.$store.getters.getTodoId,
         title: this.newTodo,
         completed: false,
         onEditing: false
       });
 
       this.newTodo = "";
-      this.nextId++;
+      this.$store.commit("incrementNextId");
     },
     editTodo(todo) {
       this.beforeEdit = todo.title;
@@ -119,15 +116,20 @@ export default {
       todo.onEditing = false;
     },
     removeTodo(index) {
-      this.todos.splice(index, 1);
+      this.$store.state.todos.splice(index, 1);
     },
     checkAllTodos() {
-      this.todos.map(todo => {
+      this.$store.state.todos.map(todo => {
         todo.completed = event.target.checked;
       });
     },
     clearCompleted() {
-      this.todos = this.todos.filter(todo => todo.completed == false);
+      this.$store.state.todos = this.$store.state.todos.filter(
+        todo => todo.completed == false
+      );
+    },
+    updateFilter(filter) {
+      this.$store.commit("updateFilter", filter);
     }
   }
 };
